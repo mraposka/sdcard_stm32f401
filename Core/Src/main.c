@@ -26,6 +26,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "string.h"
+#include "stdio.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -44,7 +45,7 @@ FIL fil; // File
 FILINFO fno;
 FRESULT fresult;  // result
 UINT br, bw;  // File read/write count
-
+char data[1200];
 /**** capacity related *****/
 FATFS *pfs;
 DWORD fre_clust;
@@ -68,7 +69,7 @@ void send_uart(char *string) {
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
-
+void backupData(void);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -107,21 +108,7 @@ int main(void) {
 	MX_SPI2_Init();
 	MX_FATFS_Init();
 	/* USER CODE BEGIN 2 */
-	fresult = f_mount(&fs, "/", 1);
-	if (fresult != FR_OK)
-		send_uart("ERROR!!! in mounting SD CARD...\n\n");
-	else
-		send_uart("SD CARD mounted successfully...\n\n");
-	/* Open file to write/ create a file if it doesn't exist */
-	fresult = f_open(&fil, "Acceleration_Log.txt",
-			FA_OPEN_ALWAYS | FA_READ | FA_WRITE);
-	if (fresult == FR_OK)
-		send_uart("File is opened");
-	else
-		send_uart("File is not opened");
 
-	/* Close file */
-	f_close(&fil);
 	/* USER CODE END 2 */
 
 	/* Infinite loop */
@@ -130,6 +117,9 @@ int main(void) {
 		/* USER CODE END WHILE */
 
 		/* USER CODE BEGIN 3 */
+		sprintf(data,"Test Data:1231241.2131231\n");
+		backupData();
+		memset(data, 0, sizeof(data));
 	}
 	/* USER CODE END 3 */
 }
@@ -178,7 +168,27 @@ void SystemClock_Config(void) {
 }
 
 /* USER CODE BEGIN 4 */
+void backupData() {
+	fresult = f_mount(&fs, "/", 1);
+	if (fresult != FR_OK)
+		send_uart("ERROR!!! in mounting SD CARD...\n\n");
+	else
+		send_uart("SD CARD mounted successfully...\n\n");
+	/* Open file to write/ create a file if it doesn't exist */
+	fresult = f_open(&fil, "datas.txt",
+	FA_OPEN_ALWAYS | FA_READ | FA_WRITE);
+	if (fresult == FR_OK) {
+		send_uart("File is opened");
+		f_mount(&fs, "", 0);
+		f_open(&fil, "datas.txt", FA_OPEN_ALWAYS | FA_WRITE | FA_READ);
+		f_lseek(&fil,f_size(&fil));
+		f_puts(data, &fil);
+		HAL_Delay(10);
+	}
 
+	/* Close file */
+	f_close(&fil);
+}
 /* USER CODE END 4 */
 
 /**
